@@ -43,9 +43,10 @@ func (s *Server) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	responses.Success(w, http.StatusCreated, struct {
-		ID int `json:"id"`
-	}{
-		ID: employee.ID,
-	})
+	responses.Success(w, http.StatusCreated,
+		struct {
+			ID int `json:"id"`
+		}{
+			ID: employee.ID,
+		})
 }
