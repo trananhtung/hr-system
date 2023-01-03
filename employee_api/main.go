@@ -1,14 +1,14 @@
 package main
 
 import (
-	"HR-system/employee_api/handlers"
+	employee_handler "HR-system/employee_api/handlers"
 	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
-var server = handlers.Server{
+var server = employee_handler.Server{
 	DB:     nil,
 	Router: nil,
 }
@@ -27,7 +27,7 @@ func main() {
 	dbname := os.Getenv("POSTGRES_DB")
 	password := os.Getenv("POSTGRES_PASSWORD")
 
-	server.StartServe(
+	server.Run(
 		host, port, user, dbname, password, "disable",
 	)
 }

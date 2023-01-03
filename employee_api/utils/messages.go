@@ -20,13 +20,3 @@ func Success(w http.ResponseWriter, code int, data interface{}) {
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(data)
 }
-
-func CheckError(w http.ResponseWriter, isError bool, messages []string) {
-	if isError {
-		if messages == nil {
-			messages = []string{"Invalid request"}
-		}
-		Error(w, http.StatusBadRequest, messages)
-		return
-	}
-}
