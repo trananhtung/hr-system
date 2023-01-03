@@ -2,6 +2,7 @@ package employee_handler
 
 import (
 	"HR-system/employee_api/models"
+	employee_storage "HR-system/employee_api/storage"
 	responses "HR-system/employee_api/utils"
 	"encoding/json"
 	"fmt"
@@ -24,9 +25,8 @@ type Route struct {
 }
 
 type Server struct {
-	DB     *gorm.DB
-	Router *mux.Router
-	Routes []Route
+	Storage *employee_storage.Storage
+	Router  *mux.Router
 }
 
 func (s *Server) Run(
@@ -87,13 +87,12 @@ func (s *Server) initializeDB(host, port, user, dbname, password, sslmode string
 		return
 	}
 
-	s.DB = db
-
-	s.DB.AutoMigrate(&models.Employee{})
+	s.Storage.SetDB(db)
+	s.Storage.AutoMigrate()
 
 	s.Router = mux.NewRouter()
-	s.Routes = s.collectRoutes()
-	for _, route := range s.Routes {
+	Routes := s.collectRoutes()
+	for _, route := range Routes {
 		s.Router.HandleFunc(route.Pattern, route.HandlerFunc).Methods(route.Method)
 	}
 }
@@ -121,7 +120,7 @@ func (s *Server) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tx := s.DB.Create(&employee)
+	tx := s.Storage.Create(&employee)
 	if tx.Error != nil {
 		messages = []string{tx.Error.Error()}
 		responses.Error(w, http.StatusBadRequest, messages)
@@ -146,7 +145,7 @@ func (s *Server) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tx := s.DB.Delete(&models.Employee{}, id)
+	tx := s.Storage.DeleteById(id)
 	if tx.Error != nil {
 		messages := []string{tx.Error.Error()}
 		responses.Error(w, http.StatusBadRequest, messages)
@@ -163,7 +162,6 @@ func (s *Server) delete(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var employees []models.Employee
 
 	idQuery := vars["id"]
 	// convert string to int
@@ -172,9 +170,9 @@ func (s *Server) get(w http.ResponseWriter, r *http.Request) {
 		responses.Error(w, http.StatusBadRequest, []string{"Invalid id"})
 	}
 
-	results := s.DB.First(&employees, id)
-	if results.Error != nil {
-		responses.Error(w, http.StatusBadRequest, []string{results.Error.Error()})
+	employees, err := s.Storage.GetById(id)
+	if err != nil {
+		responses.Error(w, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
 	responses.Success(w, http.StatusOK, employees)
@@ -203,9 +201,9 @@ func (s *Server) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// update employee
-	tx := s.DB.Model(&models.Employee{}).Where("id = ?", id).Updates(updateEmployee)
-	if tx.Error != nil {
-		messages := []string{tx.Error.Error()}
+	err = s.Storage.UpdateById(id, updateEmployee)
+	if err != nil {
+		messages := []string{err.Error()}
 		responses.Error(w, http.StatusBadRequest, messages)
 		return
 	}

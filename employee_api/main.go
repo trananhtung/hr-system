@@ -2,6 +2,7 @@ package main
 
 import (
 	employee_handler "HR-system/employee_api/handlers"
+	employee_storage "HR-system/employee_api/storage"
 	"log"
 	"os"
 
@@ -9,8 +10,8 @@ import (
 )
 
 var server = employee_handler.Server{
-	DB:     nil,
-	Router: nil,
+	Storage: &employee_storage.Storage{},
+	Router:  nil,
 }
 
 func loadEnv() {
