@@ -8,14 +8,14 @@ import (
 )
 
 type Employee struct {
-	ID        int    `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
-	Phone     string `json:"phone"`
-	Birthday  string `json:"birthday"`
-	StartDay  string `json:"start_day"`
-	Position  string `json:"position"`
+	ID        int    `json:"id" binding:"required,number" gorm:"primary_key"`
+	FirstName string `json:"first_name" binding:"required"`
+	LastName  string `json:"last_name" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Phone     string `json:"phone" binding:"required,number"`
+	Birthday  string `json:"birthday" binding:"required,datetime=2006-01-02"`
+	StartDay  string `json:"start_day" binding:"required,datetime=2006-01-02"`
+	Position  string `json:"position" binding:"required,oneof=developer tester manager"`
 }
 
 func (e *Employee) validateFirstName() []string {

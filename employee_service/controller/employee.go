@@ -4,9 +4,7 @@ import (
 	"HR-system/employee_service/models"
 	employee_storage "HR-system/employee_service/storage"
 	responses "HR-system/employee_service/utils"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -62,17 +60,11 @@ type successResponseID struct {
 }
 
 func (s *Server) create(c *gin.Context) {
-	// read data from request body
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		responses.BadRequest(c, []string{"Invalid request"})
-	}
+	var employee models.Employee
 
-	// convert data to Employee struct
-	employee := models.Employee{}
-	err = json.Unmarshal(body, &employee)
-	if err != nil {
-		responses.BadRequest(c, []string{"Invalid request"})
+	if err := c.ShouldBindJSON(&employee); err != nil {
+		responses.BadRequest(c, []string{err.Error()})
+		return
 	}
 
 	// validate data
@@ -123,11 +115,6 @@ func (s *Server) get(c *gin.Context) {
 }
 
 func (s *Server) update(c *gin.Context) {
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		responses.BadRequest(c, []string{"Invalid request"})
-	}
-
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -136,8 +123,8 @@ func (s *Server) update(c *gin.Context) {
 	}
 
 	var updateEmployee models.Employee
-	err = json.Unmarshal(body, &updateEmployee)
-	if err != nil {
+
+	if err := c.ShouldBindJSON(&updateEmployee); err != nil {
 		responses.NotFound(c, []string{"Invalid request"})
 		return
 	}
