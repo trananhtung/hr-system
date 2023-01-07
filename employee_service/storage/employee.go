@@ -1,7 +1,7 @@
 package employee_storage
 
 import (
-	"HR-system/employee_api/models"
+	"HR-system/employee_service/models"
 
 	"gorm.io/gorm"
 )

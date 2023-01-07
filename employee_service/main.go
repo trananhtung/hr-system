@@ -1,15 +1,15 @@
 package main
 
 import (
-	employee_handler "HR-system/employee_api/handlers"
-	employee_storage "HR-system/employee_api/storage"
+	employee_controller "HR-system/employee_service/controller"
+	employee_storage "HR-system/employee_service/storage"
 	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
-var server = employee_handler.Server{
+var server = employee_controller.Server{
 	Storage: &employee_storage.Storage{},
 	Router:  nil,
 }
