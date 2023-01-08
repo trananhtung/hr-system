@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
@@ -45,6 +44,7 @@ func (s *Server) initializeDB(host, port, user, dbname, password, sslmode string
 	err = s.Storage.AutoMigrate()
 	if err != nil {
 		log.Printf("Cannot migrate %s database", dbname)
+		return
 	}
 
 	s.Router = gin.Default()
@@ -61,8 +61,8 @@ func (s *Server) initializeDB(host, port, user, dbname, password, sslmode string
 	}
 }
 
-type successResponseID struct {
-	ID uint `json:"id"`
+type ID struct {
+	ID uint `json:"id" uri:"id"`
 }
 
 func (s *Server) create(c *gin.Context) {
@@ -91,48 +91,48 @@ func (s *Server) create(c *gin.Context) {
 		return
 	}
 
-	responses.Success(c, successResponseID{ID: createEmployee.ID})
+	responses.Success(c, ID{ID: createEmployee.ID})
 }
 
 func (s *Server) delete(c *gin.Context) {
-	idParam := c.Param("id")
-	// convert string to uint
-	id64, err := strconv.ParseUint(idParam, 10, 32)
-	id := uint(id64)
-
+	var id ID
+	err := c.ShouldBindUri(&id)
 	if err != nil {
 		responses.BadRequest(c, []string{"Invalid id"})
+		return
 	}
 
-	tx := s.Storage.DeleteById(id)
+	tx := s.Storage.DeleteById(id.ID)
 	if tx.Error != nil {
 		messages := []string{tx.Error.Error()}
 		responses.NotFound(c, messages)
+		return
 	}
 
-	responses.Success(c, successResponseID{ID: id})
+	responses.Success(c, id)
 }
 
 func (s *Server) get(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	var id ID
+	err := c.ShouldBindUri(&id)
 	if err != nil {
 		responses.BadRequest(c, []string{"Invalid id"})
+		return
 	}
 
-	employees, err := s.Storage.GetById(id)
+	employees, err := s.Storage.GetById(id.ID)
 	if err != nil {
 		responses.NotFound(c, []string{err.Error()})
+		return
 	}
 	responses.Success(c, employees)
 }
 
 func (s *Server) update(c *gin.Context) {
-	idParam := c.Param("id")
-	id64, err := strconv.ParseUint(idParam, 10, 32)
-	id := uint(id64)
+	var id ID
+	err := c.ShouldBindUri(&id)
 	if err != nil {
-		responses.BadRequest(c, []string{"Invalid request"})
+		responses.BadRequest(c, []string{"Invalid id"})
 		return
 	}
 
@@ -153,14 +153,14 @@ func (s *Server) update(c *gin.Context) {
 	}
 
 	updateEmployee := employee.MapForUpdate()
-	_, err = s.Storage.UpdateById(id, updateEmployee)
+	_, err = s.Storage.UpdateById(id.ID, updateEmployee)
 	if err != nil {
 		messages := []string{err.Error()}
 		responses.BadRequest(c, messages)
 		return
 	}
 
-	responses.Success(c, successResponseID{ID: id})
+	responses.Success(c, id)
 }
 
 type API struct {

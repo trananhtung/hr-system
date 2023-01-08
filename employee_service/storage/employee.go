@@ -26,7 +26,7 @@ func (s *Storage) DeleteById(id uint) *gorm.DB {
 	return s.db.Delete(&models.EmployeeModel{}, id)
 }
 
-func (s *Storage) GetById(id int) ([]models.EmployeeModel, error) {
+func (s *Storage) GetById(id uint) ([]models.EmployeeModel, error) {
 	var employees []models.EmployeeModel
 	result := s.db.First(&employees, id)
 	return employees, result.Error
