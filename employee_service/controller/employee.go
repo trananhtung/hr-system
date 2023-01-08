@@ -42,51 +42,64 @@ func (s *Server) initializeDB(host, port, user, dbname, password, sslmode string
 	}
 
 	s.Storage.SetDB(db)
-	s.Storage.AutoMigrate()
+	err = s.Storage.AutoMigrate()
+	if err != nil {
+		log.Printf("Cannot migrate %s database", dbname)
+	}
 
 	s.Router = gin.Default()
 
 	s.Router.LoadHTMLGlob("templates/*")
 
-	s.Router.GET("/", s.index)
-	s.Router.POST("/api/v1/employee/", s.create)
-	s.Router.GET("/api/v1/employee/:id", s.get)
-	s.Router.PUT("/api/v1/employee/:id", s.update)
-	s.Router.DELETE("/api/v1/employee/:id", s.delete)
+	v1 := s.Router.Group("/api/v1/employee")
+	{
+		v1.GET("/", s.index)
+		v1.POST("/", s.create)
+		v1.GET("/:id", s.get)
+		v1.PUT("/:id", s.update)
+		v1.DELETE("/:id", s.delete)
+	}
 }
 
 type successResponseID struct {
-	ID int `json:"id"`
+	ID uint `json:"id"`
 }
 
 func (s *Server) create(c *gin.Context) {
-	var employee models.Employee
+	var employee models.EmployeeDTO
 
 	if err := c.ShouldBindJSON(&employee); err != nil {
 		responses.BadRequest(c, []string{err.Error()})
 		return
 	}
 
-	// validate data
+	employee.SetRequired(true)
 	messages := employee.Validate()
 	if len(messages) > 0 {
 		responses.BadRequest(c, messages)
 		return
 	}
 
-	tx := s.Storage.Create(&employee)
+	createEmployee := employee.MapForCreate()
+
+	// validate data
+
+	tx := s.Storage.Create(&createEmployee)
 	if tx.Error != nil {
 		messages = []string{tx.Error.Error()}
 		responses.BadRequest(c, messages)
 		return
 	}
 
-	responses.Success(c, successResponseID{ID: employee.ID})
+	responses.Success(c, successResponseID{ID: createEmployee.ID})
 }
 
 func (s *Server) delete(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	// convert string to uint
+	id64, err := strconv.ParseUint(idParam, 10, 32)
+	id := uint(id64)
+
 	if err != nil {
 		responses.BadRequest(c, []string{"Invalid id"})
 	}
@@ -116,21 +129,31 @@ func (s *Server) get(c *gin.Context) {
 
 func (s *Server) update(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id64, err := strconv.ParseUint(idParam, 10, 32)
+	id := uint(id64)
 	if err != nil {
 		responses.BadRequest(c, []string{"Invalid request"})
 		return
 	}
 
-	var updateEmployee models.Employee
-
-	if err := c.ShouldBindJSON(&updateEmployee); err != nil {
-		responses.NotFound(c, []string{"Invalid request"})
+	// get employee
+	var employee models.EmployeeDTO
+	err = c.ShouldBindJSON(&employee)
+	if err != nil {
+		responses.BadRequest(c, []string{err.Error()})
+		fmt.Println(err)
 		return
 	}
 
-	// update employee
-	err = s.Storage.UpdateById(id, updateEmployee)
+	employee.SetRequired(false)
+	messages := employee.Validate()
+	if len(messages) > 0 {
+		responses.BadRequest(c, messages)
+		return
+	}
+
+	updateEmployee := employee.MapForUpdate()
+	_, err = s.Storage.UpdateById(id, updateEmployee)
 	if err != nil {
 		messages := []string{err.Error()}
 		responses.BadRequest(c, messages)
