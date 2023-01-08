@@ -32,6 +32,12 @@ func (s *Storage) GetById(id uint) ([]models.EmployeeModel, error) {
 	return employees, result.Error
 }
 
+func (s *Storage) GetAll() ([]models.EmployeeModel, error) {
+	var employees []models.EmployeeModel
+	result := s.db.Find(&employees)
+	return employees, result.Error
+}
+
 func (s *Storage) UpdateById(id uint, updateEmployee models.EmployeeModel) (int64, error) {
 	tx := s.db.Model(&models.EmployeeModel{}).Where("id = ?", id).Updates(updateEmployee)
 	return tx.RowsAffected, tx.Error

@@ -54,8 +54,9 @@ func (s *Server) initializeDB(host, port, user, dbname, password, sslmode string
 	v1 := s.Router.Group("/api/v1/employee")
 	{
 		v1.GET("/", s.index)
-		v1.POST("/", s.create)
+		v1.GET("/all", s.getAll)
 		v1.GET("/:id", s.get)
+		v1.POST("/", s.create)
 		v1.PUT("/:id", s.update)
 		v1.DELETE("/:id", s.delete)
 	}
@@ -128,6 +129,15 @@ func (s *Server) get(c *gin.Context) {
 	responses.Success(c, employees)
 }
 
+func (s *Server) getAll(c *gin.Context) {
+	employees, err := s.Storage.GetAll()
+	if err != nil {
+		responses.NotFound(c, []string{err.Error()})
+		return
+	}
+	responses.Success(c, employees)
+}
+
 func (s *Server) update(c *gin.Context) {
 	var id ID
 	err := c.ShouldBindUri(&id)
@@ -177,6 +187,7 @@ func (s *Server) index(c *gin.Context) {
 	data := Data{
 		APIs: []API{
 			{Functionality: "Get employee by id", Path: "GET /api/v1/employee/{id}", ReturnCodes: []string{"200", "404"}},
+			{Functionality: "Get all employees", Path: "GET /api/v1/employee/all", ReturnCodes: []string{"200", "404"}},
 			{Functionality: "Create employee", Path: "POST /api/v1/employee/", ReturnCodes: []string{"201", "400"}},
 			{Functionality: "Update employee", Path: "PUT /api/v1/employee/{id}", ReturnCodes: []string{"200", "400", "404"}},
 			{Functionality: "Delete employee", Path: "DELETE /api/v1/employee/{id}", ReturnCodes: []string{"200", "404"}},
