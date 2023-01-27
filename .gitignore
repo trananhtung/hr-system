@@ -1,0 +1,4 @@
+main
+.env
+**/main
+**/.env

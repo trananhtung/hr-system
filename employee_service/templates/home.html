@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee API</title>
+  <style>
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td,
+    th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+
+    tr:nth-child(even) {
+      background-color: aqua;
+    }
+  </style>
+</head>
+
+<body>
+  <table>
+    <thead>
+      <tr>
+        <th>Functionality</th>
+        <th>Path</th>
+        <th>Return Codes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .APIs }}
+      <tr>
+        <td>{{.Functionality}}</td>
+        <td>{{.Path}}</td>
+        <td>
+          {{range .ReturnCodes}}
+          {{.}}
+          </br>
+          {{end}}
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</body>
+
+</html>
