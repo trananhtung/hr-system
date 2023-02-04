@@ -36,9 +36,9 @@ type User struct {
 }
 
 func (s *Server) Run(
-	host, port, user, dbname, password, sslmode string,
+	host, port, user, dbname, password, sslmode, jwtKey string,
 ) {
-	s.initializeDB(host, port, user, dbname, password, sslmode)
+	s.initializeDB(host, port, user, dbname, password, sslmode, jwtKey)
 	s.startServe(":8080")
 }
 
@@ -47,7 +47,7 @@ func (server *Server) startServe(addr string) {
 	log.Fatal(http.ListenAndServe(addr, server.Router))
 }
 
-func (s *Server) initializeDB(host, port, user, dbname, password, sslmode string) {
+func (s *Server) initializeDB(host, port, user, dbname, password, sslmode, jwtKey string) {
 	databaseUrl := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s", host, port, user, dbname, password, sslmode)
 	db, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{})
 
