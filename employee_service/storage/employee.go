@@ -42,3 +42,9 @@ func (s *Storage) UpdateById(id uint, updateEmployee models.EmployeeModel) (int6
 	tx := s.db.Model(&models.EmployeeModel{}).Where("id = ?", id).Updates(updateEmployee)
 	return tx.RowsAffected, tx.Error
 }
+
+func (s *Storage) GetByEmail(email string) ([]models.EmployeeModel, error) {
+	var employees []models.EmployeeModel
+	result := s.db.First(&employees, "email = ?", email)
+	return employees, result.Error
+}
