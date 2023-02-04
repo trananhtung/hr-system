@@ -26,16 +26,44 @@ func (s *Storage) DeleteById(id uint) *gorm.DB {
 	return s.db.Delete(&models.EmployeeModel{}, id)
 }
 
-func (s *Storage) GetById(id uint) ([]models.EmployeeModel, error) {
-	var employees []models.EmployeeModel
-	result := s.db.First(&employees, id)
-	return employees, result.Error
+type EmployeeData struct {
+	ID        uint   `json:"id" gorm:"primarykey"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email" gorm:"unique"`
+	Phone     string `json:"phone"`
+	Birthday  string `json:"birthday"`
+	Position  string `json:"position"`
 }
 
-func (s *Storage) GetAll() ([]models.EmployeeModel, error) {
+func MapFromEmployeeModel(employees []models.EmployeeModel) []EmployeeData {
+	var employeeData []EmployeeData
+	for _, e := range employees {
+		employeeData = append(employeeData, EmployeeData{
+			ID:        e.ID,
+			FirstName: e.FirstName,
+			LastName:  e.LastName,
+			Email:     e.Email,
+			Phone:     e.Phone,
+			Birthday:  e.Birthday,
+			Position:  e.Position,
+		})
+	}
+	return employeeData
+}
+
+func (s *Storage) GetById(id uint) ([]EmployeeData, error) {
+	var employees []models.EmployeeModel
+	result := s.db.First(&employees, id)
+
+	return MapFromEmployeeModel(employees), result.Error
+}
+
+func (s *Storage) GetAll() ([]EmployeeData, error) {
 	var employees []models.EmployeeModel
 	result := s.db.Find(&employees)
-	return employees, result.Error
+
+	return MapFromEmployeeModel(employees), result.Error
 }
 
 func (s *Storage) UpdateById(id uint, updateEmployee models.EmployeeModel) (int64, error) {
