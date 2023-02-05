@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // create enum for required fields
@@ -20,6 +21,7 @@ type EmployeeDTO struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email" gorm:"unique"`
+	Password  string `json:"password"`
 	Phone     string `json:"phone"`
 	Birthday  string `json:"birthday"`
 	StartDay  string `json:"start_day"`
@@ -33,6 +35,7 @@ type EmployeeModel struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email" gorm:"unique"`
+	Password  string `json:"password"`
 	Phone     string `json:"phone"`
 	Birthday  string `json:"birthday"`
 	StartDay  string `json:"start_day"`
@@ -47,6 +50,7 @@ func (e *EmployeeDTO) MapForUpdate() EmployeeModel {
 	employeeDB.FirstName = e.FirstName
 	employeeDB.LastName = e.LastName
 	employeeDB.Email = e.Email
+	employeeDB.Password = e.Password
 	employeeDB.Phone = e.Phone
 	employeeDB.Birthday = e.Birthday
 	employeeDB.StartDay = e.StartDay
@@ -60,6 +64,13 @@ func (e *EmployeeDTO) MapForCreate() EmployeeModel {
 	employeeDB := e.MapForUpdate()
 	employeeDB.ID = e.ID
 	employeeDB.CreateAt = time.Now().Unix()
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(e.Password), bcrypt.DefaultCost)
+	if err != nil {
+		hashedPassword = []byte{}
+	}
+
+	employeeDB.Password = string(hashedPassword)
 
 	return employeeDB
 }
