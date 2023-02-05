@@ -70,7 +70,7 @@ func (s *Server) initializeDB(host, port, user, dbname, password, sslmode, jwtKe
 
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:       "authentication",
-		Key:         []byte("secret key"),
+		Key:         []byte(jwtKey),
 		Timeout:     time.Hour,
 		MaxRefresh:  time.Hour,
 		IdentityKey: identityKey,
