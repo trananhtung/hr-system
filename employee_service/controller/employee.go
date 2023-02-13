@@ -7,9 +7,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
@@ -185,6 +190,7 @@ func (s *Server) initializeDB(host, port, user, dbname, password, sslmode, jwtKe
 		v1.GET("/:id", s.get)
 		v1.PUT("/:id", s.update)
 		v1.DELETE("/:id", s.delete)
+		s.Router.POST("/upload", s.upload)
 	}
 }
 
@@ -297,6 +303,56 @@ func (s *Server) update(c *gin.Context) {
 	}
 
 	responses.Success(c, id)
+}
+
+// upload file
+func (s *Server) upload(c *gin.Context) {
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		responses.BadRequest(c, []string{err.Error()})
+		return
+	}
+
+	defer file.Close()
+
+	// get env region
+	region := os.Getenv("AWS_REGION")
+	// get env access key id
+	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+	// get env secret access key
+	secret := os.Getenv("AWS_SECRET_ACCESS_KEY")
+
+	if region == "" || accessKeyID == "" || secret == "" {
+		responses.InternalServerError(c, []string{"AWS config not found"})
+		return
+	}
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: credentials.NewStaticCredentials(accessKeyID, secret, ""),
+	})
+
+	if err != nil {
+		responses.InternalServerError(c, []string{err.Error()})
+		return
+	}
+
+	uploader := s3manager.NewUploader(sess)
+
+	// Upload the file to S3.
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String("gohrsystem"),
+		Key:    aws.String(header.Filename),
+		Body:   file,
+	})
+
+	if err != nil {
+		responses.InternalServerError(c, []string{err.Error()})
+		return
+	}
+
+	responses.Success(c, result.Location)
+
 }
 
 type API struct {
